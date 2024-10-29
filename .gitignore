@@ -1,0 +1,14 @@
+*.csv
+*.rds
+*.trees
+*.png
+*.txt
+*.log
+*.lock
+**/*.csv
+**/*.rds
+**/*.trees
+**/*.png
+**/*.txt
+**/*.log
+**/*.lock
