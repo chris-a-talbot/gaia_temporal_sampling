@@ -1,4 +1,6 @@
-# gaia_temporal_sampling
+# gaia temporal sampling
+
+A workflow for testing the effects of various temporal sampling schemes on the accuracy of gaia ancestor location inference on the cluster.
 
 Workflow:
 
