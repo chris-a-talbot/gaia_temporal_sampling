@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=cont_uif_slim_sims
+#SBATCH --job-name=cont_unif_slim_sims
 #SBATCH --mail-user=chtalbot@umich.edu
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --cpus-per-task=1
