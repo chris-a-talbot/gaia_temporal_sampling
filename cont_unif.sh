@@ -16,8 +16,9 @@ set -e
 
 CWD=$(pwd)
 
+module use /nfs/turbo/lsa-bradburd/shared/Lmod/
 module load Bioinformatics
-module load slim
+module load SLiM/4.3
 
 echo "Starting simulation REP=${SLURM_ARRAY_TASK_ID} on node $(hostname) at $(date)"
 echo "Current working directory: $CWD"
