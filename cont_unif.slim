@@ -1,0 +1,156 @@
+// When running from bash/slurm, provide 4 parameters using the following command:
+// slim -d "PWD=${CWD}" -d "S=0.3" -d "REP=${SLURM_ARRAY_TASK_ID}" -d "RUNTIME=80800" cont_unif.slim > "${CWD}/cont_unif_slim_sh_logs/simulation_rep_${SLURM_ARRAY_TASK_ID}.log" 2>&1
+
+initialize() {
+	// Before beginning the simulation:
+
+	// Initialize model settings
+   initializeSLiMModelType("nonWF");
+   initializeSLiMOptions(keepPedigrees=T, dimensionality="xy");
+   initializeTreeSeq();
+   
+   // If non running from shell, set customizable constants to defaults
+	if(exists("slimgui")) {
+		// Working directory
+   	defineConstant("PWD", "/home/christ/PycharmProjects/gaia_temporal_sampling/gaia_temporal_testing");
+   	defineConstant("S", 0.3); 				// Dispersal rate
+    	defineConstant("REP", 1); 				// Replicate number
+    	defineConstant("RUNTIME", 80800); 	// Number of ticks to run
+	}
+    
+   // Output directories and filenames
+	defineConstant("PREFIX", "tree-S"+paste(S)+"-R"+paste(REP));						// Prefix for output tree sequence
+	defineConstant("TREEFILE", paste(PWD)+"/trees/"+PREFIX+".trees");					// Directory & file for output tree sequence
+	defineConstant("LOGFILE", paste(PWD) + "/logs/SLiM_logs/" + PREFIX + ".txt");	// Directory & file for output log file
+    
+   // Tick number and sampling scheme
+   defineConstant("SAMPLE_PERC", 0.01);								// Percent of final ticks to sample from
+   defineConstant("SAMPLE_START", RUNTIME * SAMPLE_PERC);		// Tick to start periodic sampling at
+   defineConstant("SAMPLE_FREQ", 5);									// Periodicity of sampling
+	defineConstant("PERCENT_PER_TICK", 0.05); 						// Percent of population to sample at each interval
+           
+   // Interaction scale
+   defineConstant("SD", S);		// Dispersal scale
+   defineConstant("SX", S);		// Interaction scale
+   defineConstant("SM", S);		// Mate choice scale
+    
+   // Spatial scale, selected to ensure population size fluctuates around 8000
+   defineConstant("WIDTH", 163.0 * SX);			// Width of space
+   defineConstant("HEIGHT", 163.0 * SX);			// Height of space
+
+   // Population regulation
+   defineConstant("K", 5);											// Carrying capacity/unit area
+   defineConstant("FECUND", 0.5);								// Mean offspring/individual/time
+   defineConstant("RHO", FECUND / ( (1 + FECUND) * K) );	// density scaling factor
+    
+   // Set up neutral genetics (not used but required)
+   initializeMutationRate(0);
+   initializeMutationType("m1", 0.5, "f", 0.0);
+   initializeGenomicElementType("g1", m1, 1.0);
+   initializeGenomicElement(g1, 0, 99999);
+   initializeRecombinationRate(1e-8);
+    
+   // Interaction type for local density measurement
+   initializeInteractionType(1, "xy", reciprocal=T, maxDistance=3 * SX);
+   i1.setInteractionFunction("n", 1.0, SX);
+    
+   // Interaction type for mate choice
+   initializeInteractionType(2, "xy", reciprocal=T, maxDistance=3 * SM);
+   i2.setInteractionFunction("n", 1.0, SM);
+}
+
+1 first() {
+	// At the start of tick 1:
+	
+	// Create population, set spatial extent, and place individuals
+	sim.addSubpop("p1", asInteger(K * WIDTH * HEIGHT));
+	p1.setSpatialBounds(c(0, 0, WIDTH, HEIGHT));
+	p1.individuals.setSpatialPosition(p1.pointUniform(p1.individualCount));
+	
+	// Set up logging with custom pedigree ID tracking
+	log = community.createLogFile(LOGFILE, append=T);
+   log.addCycle();
+   log.addCustomColumn("pedigree_IDs", "getPedigreeIDs(NULL);");
+}
+
+first() {
+	// At the start of every tick:
+	
+	// Evaluate mating interaction
+	i2.evaluate(sim.subpopulations);
+}
+
+reproduction() {
+	// For each individual in every tick:
+	
+	// Select a mate for each individual according to the mating interaction
+   mate = i2.drawByStrength(individual, 1);
+    
+   // If a mate is found, generate offspring according to fecundity
+   if (mate.size()) {
+       offspring = subpop.addCrossed(individual, mate, count=rpois(1, FECUND));
+   }
+}
+
+early() {
+	// After first() for every tick:
+
+	// Get a list of new offspring and disperse them
+	offspring = p1.subsetIndividuals(maxAge=0);
+	p1.deviatePositions(offspring, "reflecting", INF, "n", SD);
+
+	// Fitness scaling for density regulation
+	i1.evaluate(sim.subpopulations);
+   inds = p1.individuals;
+   competition = i1.localPopulationDensity(inds);
+   inds.fitnessScaling = 1.0 / (1.0 + RHO * competition);
+}
+
+late() {
+	// At the end of every tick:
+
+	// End the simulation if the population goes extinct
+	if(p1.individualCount == 0) {
+		catn("Population went extinct! Ending the simulation.");
+		sim.simulationFinished();
+	}
+	
+	// Tree sequence recording
+   sim.treeSeqRememberIndividuals(p1.individuals, permanent=F);
+	if(sim.cycle >= SAMPLE_START) {
+		if(sim.cycle % SAMPLE_FREQ == 0) {
+			log = community.logFiles;
+			log.logRow();
+            print("Logged row for tick " + paste(sim.cycle));
+		}
+	}
+}
+
+RUNTIME late() {
+	// At the end of the last tick:
+
+	// Update and save the tree sequence, then end the simulation
+	catn("End of simulation. Ran for " + RUNTIME + " ticks.");
+	sim.treeSeqRememberIndividuals(p1.individuals, permanent=T);
+	sim.treeSeqOutput("output.trees");
+   sim.simulationFinished();
+}
+
+// Function to sample a percent of extant individuals, save their pedigree IDs to log, 
+// and permanently remember them in the tree sequence
+function (string$) getPedigreeIDs(NULL n) {
+	// Get a list of extant individuals
+	inds = p1.individuals;
+	
+	// Determine how many to sample
+	num_to_remember = asInteger(p1.individualCount*PERCENT_PER_TICK)+1;
+	
+	// Randomly sample from the population without replacement
+	inds_to_remember_perm = sample(inds, num_to_remember);	
+	
+	// Remember the sampled individuals permanently
+	sim.treeSeqRememberIndividuals(inds_to_remember_perm, permanent=T);
+	
+	// Output the pedigree IDs of sampled individuals
+	return paste(inds_to_remember_perm.pedigreeID, sep=",");
+}
