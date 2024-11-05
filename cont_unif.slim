@@ -19,29 +19,29 @@ initialize() {
 	}
     
 	// Output directories and filenames
-	defineConstant("PREFIX", "tree-S"+paste(S)+"-R"+paste(REP));						// Prefix for output tree sequence
-	defineConstant("TREEFILE", paste(PWD)+"/trees/"+PREFIX+".trees");					// Directory & file for output tree sequence
-	defineConstant("LOGFILE", paste(PWD) + "/logs/SLiM_logs/" + PREFIX + ".txt");		// Directory & file for output log file
+	defineConstant("PREFIX", "tree-S"+paste(S)+"-R"+paste(REP));
+	defineConstant("TREEFILE", paste(PWD)+"/trees/"+PREFIX+".trees");
+	defineConstant("LOGFILE", paste(PWD) + "/logs/SLiM_logs/" + PREFIX + ".txt");
     
-	// Tick number and sampling scheme
-	defineConstant("SAMPLE_PERC", 0.01);						// Percent of final ticks to sample from
-	defineConstant("SAMPLE_START", RUNTIME * SAMPLE_PERC);		// Tick to start periodic sampling at
-	defineConstant("SAMPLE_FREQ", 5);							// Periodicity of sampling
-	defineConstant("PERCENT_PER_TICK", 0.05); 					// Percent of population to sample at each interval
+	// Tree sequence sampling scheme
+	defineConstant("SAMPLE_PERC", 0.01);
+	defineConstant("SAMPLE_START", RUNTIME * SAMPLE_PERC);
+	defineConstant("SAMPLE_FREQ", 5);
+	defineConstant("PERCENT_PER_TICK", 0.05);
            
 	// Interaction scale
-	defineConstant("SD", S);		// Dispersal scale
-	defineConstant("SX", S);		// Interaction scale
-	defineConstant("SM", S);		// Mate choice scale
+	defineConstant("SD", S);
+	defineConstant("SX", S);
+	defineConstant("SM", S);
     
 	// Spatial scale, selected to ensure population size fluctuates around 8000
-	defineConstant("WIDTH", 163.0 * SX);			// Width of space
-	defineConstant("HEIGHT", 163.0 * SX);			// Height of space
+	defineConstant("WIDTH", 163.0 * SX);
+	defineConstant("HEIGHT", 163.0 * SX);
 
 	// Population regulation
-	defineConstant("K", 5);										// Carrying capacity/unit area
-	defineConstant("FECUND", 0.5);								// Mean offspring/individual/time
-	defineConstant("RHO", FECUND / ( (1 + FECUND) * K) );		// density scaling factor
+	defineConstant("K", 5);
+	defineConstant("FECUND", 0.5);
+	defineConstant("RHO", FECUND / ( (1 + FECUND) * K) );
     
 	// Set up neutral genetics (not used but required)
 	initializeMutationRate(0);
