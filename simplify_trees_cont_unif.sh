@@ -1,4 +1,3 @@
- 
 #!/bin/bash
 #SBATCH --job-name=simplify_trees
 #SBATCH --mail-user=chtalbot@umich.edu
