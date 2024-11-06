@@ -132,7 +132,7 @@ RUNTIME late() {
 	// Update and save the tree sequence, then end the simulation
 	catn("End of simulation. Ran for " + RUNTIME + " ticks.");
 	sim.treeSeqRememberIndividuals(p1.individuals, permanent=T);
-	sim.treeSeqOutput("output.trees");
+	sim.treeSeqOutput(TREEFILE);
 	sim.simulationFinished();
 }
 
