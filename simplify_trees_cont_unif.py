@@ -136,18 +136,18 @@ def get_percentage_generations(total_gens):
     """Calculate generation ranges for different percentage spans."""
     spans = {}
 
-    # Calculate the number of generations for each percentage
-    one_percent_gens = max(1, int(round(total_gens * 0.01)))  # At least 1 generation
-    zero_point_75_gens = max(1, int(round(total_gens * 0.0075)))
-    zero_point_50_gens = max(1, int(round(total_gens * 0.005)))
-    zero_point_25_gens = max(1, int(round(total_gens * 0.0025)))
+    # Calculate the number of generations for each percentage, ensuring integer results
+    one_percent_gens = max(1, int(np.floor(total_gens * 0.01)))
+    zero_point_75_gens = max(1, int(np.floor(total_gens * 0.0075)))
+    zero_point_50_gens = max(1, int(np.floor(total_gens * 0.005)))
+    zero_point_25_gens = max(1, int(np.floor(total_gens * 0.0025)))
 
-    # Calculate the ranges for each span
+    # Calculate the ranges for each span, ensuring all values are integers
     spans = {
-        'last_quarter_percent': range(total_gens - zero_point_25_gens + 1, total_gens + 1),
-        'last_half_percent': range(total_gens - zero_point_50_gens + 1, total_gens + 1),
-        'last_three_quarters_percent': range(total_gens - zero_point_75_gens + 1, total_gens + 1),
-        'last_percent': range(total_gens - one_percent_gens + 1, total_gens + 1)
+        'last_quarter_percent': range(int(total_gens - zero_point_25_gens + 1), int(total_gens + 1)),
+        'last_half_percent': range(int(total_gens - zero_point_50_gens + 1), int(total_gens + 1)),
+        'last_three_quarters_percent': range(int(total_gens - zero_point_75_gens + 1), int(total_gens + 1)),
+        'last_percent': range(int(total_gens - one_percent_gens + 1), int(total_gens + 1))
     }
 
     return spans
