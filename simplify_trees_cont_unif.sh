@@ -17,7 +17,7 @@ set -e
 module load python/3.11
 
 # Activate virtual environment
-source ~/venv/venv_simplify_trees/bin/activate
+source ~/venv/tskit_env/bin/activate
 
 # Set working directory
 CWD=$(pwd)
