@@ -1,4 +1,4 @@
- import tskit
+import tskit
 import numpy as np
 from datetime import datetime
 import itertools
@@ -154,13 +154,34 @@ def get_percentage_generations(total_gens):
 
 
 def read_pedigree_log(log_path):
-    """Read and parse the pedigree log file."""
+    """Read and parse the pedigree log file, removing duplicate sections if present."""
     try:
+        # Read the raw file first
         df = pd.read_csv(log_path)
+
+        # Check for duplicate headers within the data
+        header_rows = df[df['cycle'] == 'cycle'].index
+
+        if len(header_rows) > 0:
+            # If we found duplicate headers, keep only the most recent section
+            last_header = header_rows[-1]
+            # Get the latest section (from after the last header to the end)
+            df = df[last_header + 1:].reset_index(drop=True)
+
+            # Write the cleaned data to a new file
+            output_path = log_path.rsplit('.', 1)[0] + '_trimmed.' + log_path.rsplit('.', 1)[1]
+            df.to_csv(output_path, index=False)
+            logging.info(f"Cleaned file saved to: {output_path}")
+
+        # Convert the pedigree_IDs column to lists of integers
         df['pedigree_IDs'] = df['pedigree_IDs'].apply(lambda x: [int(i) for i in x.split(',')])
+
+        # Create the generation to IDs dictionary
         gen_to_ids = dict(zip(df['cycle'], df['pedigree_IDs']))
         total_gens = df['cycle'].max()
+
         return gen_to_ids, total_gens
+
     except Exception as e:
         logging.error(f"Error reading pedigree log {log_path}: {str(e)}")
         raise
