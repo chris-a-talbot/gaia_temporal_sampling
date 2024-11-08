@@ -24,6 +24,6 @@ echo "Starting simulation REP=${SLURM_ARRAY_TASK_ID} on node $(hostname) at $(da
 echo "Current working directory: $CWD"
 echo "SLURM Job ID: $SLURM_JOB_ID, Array Task ID: $SLURM_ARRAY_TASK_ID"
 
-slim -d "PWD='$CWD'" -d "S=0.3" -d "REP=${SLURM_ARRAY_TASK_ID}" -d "RUNTIME=80800" cont_unif.slim > "${CWD}/logs/processing_logs/cont_unif_slim_sh_logs/simulation_rep_${SLURM_ARRAY_TASK_ID}.log" 2>&1
+slim -d "PWD='$CWD'" -d "S=0.3" -d "REP=${SLURM_ARRAY_TASK_ID}" -d "RUNTIME=121200" cont_unif.slim > "${CWD}/logs/processing_logs/cont_unif_slim_sh_logs/simulation_rep_${SLURM_ARRAY_TASK_ID}.log" 2>&1
 
 echo "Completed simulation REP=${SLURM_ARRAY_TASK_ID} at $(date)"
