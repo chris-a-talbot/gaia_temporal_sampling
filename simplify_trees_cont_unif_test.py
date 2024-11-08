@@ -44,6 +44,7 @@ NAMING_KEY = {
 def get_percentage_generations(total_gens):
     """Calculate generation ranges for different percentage spans."""
     spans = {}
+    total_gens = int(total_gens)
 
     one_percent_gens = max(1, int(round(total_gens * 0.01)))
     zero_point_75_gens = max(1, int(round(total_gens * 0.0075)))
@@ -51,26 +52,48 @@ def get_percentage_generations(total_gens):
     zero_point_25_gens = max(1, int(round(total_gens * 0.0025)))
 
     spans = {
-        'last_quarter_percent': range(total_gens - zero_point_25_gens + 1, total_gens + 1),
-        'last_half_percent': range(total_gens - zero_point_50_gens + 1, total_gens + 1),
-        'last_three_quarters_percent': range(total_gens - zero_point_75_gens + 1, total_gens + 1),
-        'last_percent': range(total_gens - one_percent_gens + 1, total_gens + 1)
+        'last_quarter_percent': range(total_gens - zero_point_25_gens, total_gens),
+        'last_half_percent': range(total_gens - zero_point_50_gens, total_gens),
+        'last_three_quarters_percent': range(total_gens - zero_point_75_gens, total_gens),
+        'last_percent': range(total_gens - one_percent_gens, total_gens)
     }
 
     return spans
 
 
 def read_pedigree_log(log_path):
-    """Read and parse the pedigree log file."""
+    """Read and parse the pedigree log file, removing duplicate sections if present."""
     try:
+        # Read the raw file first
         df = pd.read_csv(log_path)
+
+        # Check for duplicate headers within the data
+        header_rows = df[df['cycle'] == 'cycle'].index
+
+        if len(header_rows) > 0:
+            # If we found duplicate headers, keep only the most recent section
+            last_header = header_rows[-1]
+            # Get the latest section (from after the last header to the end)
+            df = df[last_header + 1:].reset_index(drop=True)
+
+            # Write the cleaned data to a new file
+            output_path = log_path.rsplit('.', 1)[0] + '_trimmed.' + log_path.rsplit('.', 1)[1]
+            df.to_csv(output_path, index=False)
+            logging.info(f"Cleaned file saved to: {output_path}")
+
+        # Convert the pedigree_IDs column to lists of integers
         df['pedigree_IDs'] = df['pedigree_IDs'].apply(lambda x: [int(i) for i in x.split(',')])
+
+        # Create the generation to IDs dictionary
         gen_to_ids = dict(zip(df['cycle'], df['pedigree_IDs']))
         total_gens = df['cycle'].max()
+
         return gen_to_ids, total_gens
+
     except Exception as e:
         logging.error(f"Error reading pedigree log {log_path}: {str(e)}")
         raise
+
 
 
 def process_tree_file(tree_path, contemporary_n_max=250, noncontemporary_n_max=100,
@@ -132,8 +155,8 @@ def process_tree_file(tree_path, contemporary_n_max=250, noncontemporary_n_max=1
             span_generations = percentage_spans[span]
             pedigree_pool = []
             for gen in span_generations:
-                if gen in gen_to_ids:
-                    pedigree_pool.extend(gen_to_ids[gen])
+                if str(gen) in gen_to_ids:
+                    pedigree_pool.extend(gen_to_ids[str(gen)])
 
             if len(pedigree_pool) < n_non_contemporaries:
                 logger.warning(f"Not enough non-contemporary individuals for scheme '{scheme_name}'")
@@ -158,7 +181,7 @@ def process_tree_file(tree_path, contemporary_n_max=250, noncontemporary_n_max=1
         sampling_schemes[scheme_name] = contemporary_individuals_sample_ids.tolist()
 
         # Create simplified trees
-        output_dir = os.path.join('output', 'simplified')
+        output_dir = os.path.join("./gaia_temporal_testing/trees", 'simplified')
         os.makedirs(output_dir, exist_ok=True)
 
         for scheme_name, individual_ids in sampling_schemes.items():
@@ -195,7 +218,7 @@ def main():
 
     # Configuration
     trees_dir = "./gaia_temporal_testing/trees"  # Directory containing your tree files
-    num_cores = max(1, mp.cpu_count() // 2)  # Use half of available cores
+    num_cores = max(1, mp.cpu_count() // 4)  # Use half of available cores
 
     try:
         # Get all tree files
